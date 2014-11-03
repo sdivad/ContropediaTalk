@@ -1,15 +1,16 @@
 import sys
 import re
 
+verbose = True
 debug = False
 debug_hard = False
 write_chains = True
 
 #usage: python thread_metrics.py input_file
 
-filename_in = sys.argv[1]  #'../discussions/discussions.csv' 
+filename_in = sys.argv[1]  #'../data/discussions.tsv' 
 
-out_folder = 'discussion-metrics/'
+out_folder = '../discussion-metrics/'
 filename_out = out_folder + 'thread_metrics.csv' #sys.argv[2]
 
 if write_chains:
@@ -22,6 +23,8 @@ chains_comments = 0
 
 chain_threshold = 3
 
+n_threads = 0
+
 ipP = re.compile(r'\d+\.\d+\.\d+\.\d+')
 botP = re.compile(r'.+[bB][oO][tT]$')
 
@@ -29,11 +32,15 @@ botP = re.compile(r'.+[bB][oO][tT]$')
 def main():
 	global chains_comments
 	global chains_num	
+	if verbose: print 'Processing file %s' %filename_in
 	with open(filename_in) as f:
 		with open(filename_out, 'w') as f_out:
 
 			f_out.write('\t'.join(['article_id', 'talk_id', 'thread_id', 'thread_title', 'comments', 'users', 'users_hindex', 'max_depth', 'tree_hindex', 'chains_num', 'chains_comments', 'tree_string']) + '\n')
-			
+
+			art_id = -1
+			talk_id = -1			
+			thread_id = -1
 			thread_title = ''
 			hist = {}
 			depth = {}
@@ -41,6 +48,9 @@ def main():
 			authors = {}
 			children = {}
 			root = 0
+			
+			chains_num = 0
+			chains_comments = 0
 			
 			f.readline()
 			for line in f:
@@ -56,12 +66,8 @@ def main():
 				if level <= 0:					
 					#if id != 1: print 'something strange: article=%d, last_article=%d, id=%d' %(article, last_article, id)
 					#~ tree_hindex = hindex(tree_hist)
-					if len(authors) > 1:
-						authors_hist = get_hist(authors)					
-						tree_hist = get_hist(depth)
-						count_chains(children, authors, root, [], art_id, thread_id)
-						tree_string = tree2string(children, authors, root)
-						f_out.write('\t'.join(map(str, [art_id, talk_id, thread_id, thread_title, len(authors)-1, len(authors_hist), hindex(get_hist(authors_hist)), get_max(depth), hindex(tree_hist), chains_num, chains_comments, tree_string])) + '\n')
+					write_thread_metrics(f_out, art_id, talk_id, thread_id, thread_title, children, authors, root, depth) #, chains_num, chains_comments)
+					
 					
 					thread_title = s[-1].strip('\n= ') 
 					depth = {}
@@ -91,6 +97,9 @@ def main():
 							if parent not in children:
 								children[parent] = []
 							children[parent].append(id)
+							
+			write_thread_metrics(f_out, art_id, talk_id, thread_id, thread_title, children, authors, root, depth) #, chains_num, chains_comments)		
+	print 'written metrics for %d threads on file %s' %(n_threads, filename_out) 			
 
 
 def tree2string(children, authors, root):
@@ -120,6 +129,7 @@ def get_max(dic):
 		if v > M: M = v
 	return M
 	
+	
 def get_hist(dic):
 	hist = {}
 	for el in dic.values():
@@ -129,11 +139,13 @@ def get_hist(dic):
 			hist[el] += 1
 	return hist
 		
+		
 def hindex(dic):
 	h = 0
 	for v in dic:
 		if dic[v] >= v: h = v
 	return h
+
 
 def count_chains(children, authors, root, chain, art_id, thread_id):
 
@@ -171,6 +183,16 @@ def count_chains(children, authors, root, chain, art_id, thread_id):
 			for c in children[root]:
 				count_chains(children, authors, c, chain, art_id, thread_id)
 				
+				
+def write_thread_metrics(f_out, art_id, talk_id, thread_id, thread_title, children, authors, root, depth):
+	global n_threads
+	if len(authors) > 1:
+		authors_hist = get_hist(authors)					
+		tree_hist = get_hist(depth)
+		count_chains(children, authors, root, [], art_id, thread_id)
+		tree_string = tree2string(children, authors, root)
+		f_out.write('\t'.join(map(str, [art_id, talk_id, thread_id, thread_title, len(authors)-1, len(authors_hist), hindex(get_hist(authors_hist)), get_max(depth), hindex(tree_hist), chains_num, chains_comments, tree_string])) + '\n')
+		n_threads += 1
 
 if __name__ == '__main__':	
 	main()
