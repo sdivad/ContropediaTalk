@@ -23,16 +23,18 @@ CHAIN_WEIGHT = 3
 #Input file containing one comment with metadata per line. Discussion associated to one only article is expected
 #Format of the input file is described here:
 #https://github.com/sdivad/WikiTalkParser/tree/master/discussions
+f = open('../data/discussions.tsv', 'r')
 #~ f = codecs.open(sys.argv[1], 'r', 'UTF-8')
-f = codecs.open('discussions.tsv', 'r', 'UTF-8')
 
 #Input file containing matching between actors (elements in the article) to discussion threads mentioning them 
 #(file 'actors_matched.csv' produced in https://github.com/boogheta/contropedia-sprint-scripts/ )
+f_actors = open('../data/actors_matched.csv', 'r')
 #~ f_actors = codecs.open(sys.argv[2], 'r', 'UTF-8')
-f_actors = codecs.open('actors_matched.csv', 'r', 'UTF-8')
 
-#Output file name
-f_out = codecs.open(sys.argv[1], 'w', 'UTF-8')
+#Output file
+output_folder = '../discussion-metrics/'
+f_out = open(output_folder + 'actor_controversiality_by_month.csv', 'w')
+#~ f_out = codecs.open(sys.argv[3], 'w', 'UTF-8')
 
 #Load thread-actor matchings into a dictionary
 def load_actors_data(f):
