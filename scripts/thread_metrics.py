@@ -6,15 +6,23 @@ debug = False
 debug_hard = False
 write_chains = True
 
-#usage: python thread_metrics.py input_file
+#usage: python thread_metrics.py page_title
 
-filename_in = sys.argv[1]  #'../data/discussions.tsv' 
+#old usage: python thread_metrics.py input_file
+#~ filename_in = sys.argv[1]  #'../data/discussions.tsv' 
 
-out_folder = '../discussion-metrics/'
-filename_out = out_folder + 'thread_metrics.csv' #sys.argv[2]
+page_title = sys.argv[1]
+datadir = "../../contropedia-sprint-scripts/discussions_match/data/%s" % page_title
+filename_in = datadir + '/discussions.tsv'
+
+
+#~ out_folder = '../discussion-metrics/'
+#~ filename_out = out_folder + 'thread_metrics.csv' #sys.argv[2]
+filename_out = datadir + '/thread_metrics.csv' #sys.argv[2]
 
 if write_chains:
-	chains_file = out_folder + 'chains.csv'
+	#~ chains_file = out_folder + 'chains.csv'
+	chains_file = datadir + '/chains.csv'
 	f_chains = open(chains_file, 'w')
 	f_chains.write('art_id\tthread_id\tUser1\tUser2\tlength\n')
 
