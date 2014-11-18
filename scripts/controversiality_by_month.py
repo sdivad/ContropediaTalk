@@ -14,6 +14,13 @@ import sys
 import datetime
 import math
 
+
+page_title = sys.argv[1]
+datadir = "../../contropedia-sprint-scripts/discussions_match/data/%s" % page_title
+
+#If True, it will print annoying messages on the screen
+debug = False
+
 #weight to make stronger the association between a thread and an actor when the actor is mentioned in the thread title
 TITLE_WEIGHT = 3
 
@@ -23,17 +30,19 @@ CHAIN_WEIGHT = 3
 #Input file containing one comment with metadata per line. Discussion associated to one only article is expected
 #Format of the input file is described here:
 #https://github.com/sdivad/WikiTalkParser/tree/master/discussions
-f = open('../data/discussions.tsv', 'r')
-#~ f = codecs.open(sys.argv[1], 'r', 'UTF-8')
+f = open(datadir + '/discussions.tsv', 'r')
+#~ f = open('../data/discussions.tsv', 'r')
 
 #Input file containing matching between actors (elements in the article) to discussion threads mentioning them 
 #(file 'actors_matched.csv' produced in https://github.com/boogheta/contropedia-sprint-scripts/ )
-f_actors = open('../data/actors_matched.csv', 'r')
-#~ f_actors = codecs.open(sys.argv[2], 'r', 'UTF-8')
+f_actors = open(datadir + '/actors_matched.csv', 'r')
+#~ f_actors = open('../data/actors_matched.csv', 'r')
+
 
 #Output file
-output_folder = '../discussion-metrics/'
-f_out = open(output_folder + 'actor_controversiality_by_month.csv', 'w')
+#~ output_folder = '../discussion-metrics/'
+#~ f_out = open(output_folder + 'actor_controversiality_by_month.csv', 'w')
+f_out = open(datadir + '/actor_controversiality_by_month.csv', 'w')
 #~ f_out = codecs.open(sys.argv[3], 'w', 'UTF-8')
 
 #Load thread-actor matchings into a dictionary
@@ -41,9 +50,9 @@ def load_actors_data(f):
 	d = {}
 	f.readline()
 	for line in f:
-		art, actor, thread, perma, n, n_title, timestamps = line.strip('\n').split('\t')
+		art, actor, thread, perma, n_title, n, timestamps, ids = line.strip('\n').split('\t')
 		if thread not in d: d[thread] = {}
-		if actor in d[thread]: print 'duplicated actor-thread: %s --- %s' %(actor, thread)
+		if actor in d[thread] and debug: print 'duplicated actor-thread: %s --- %s' %(actor, thread)
 		n_title = int(n_title)
 		d[thread][actor] = [n_title, timestamps] 
 	return d		
@@ -116,7 +125,7 @@ for line in f:
 								actor_comments[actor][month][4] += CHAIN_WEIGHT * actor_thread_weight
 								actor_comments[actor][month][5] += 1 * actor_thread_weight
 							else:	
-								print '%s - %s -> %d, %d' % (auth, grand_parent_auth, reply, reply_back)
+								if debug: print '%s - %s -> %d, %d' % (auth, grand_parent_auth, reply, reply_back)
 								actor_comments[actor][month][4] += 1 * actor_thread_weight
 								
 			grand_parent_auth = parent_auth
@@ -124,7 +133,7 @@ for line in f:
 
 #Write output
 def write_actors(art, actor_comments, f_out):
-	f_out.write('article\tactor\tmonth\tn_comment\tn_comments_weighted\tdepth_controversiality\tdepth_log_controversiality\tchains_controversiality\tchains_only_controversiality\n')
+	f_out.write('article\tactor\tmonth\tn_comments\tn_comments_weighted\tdepth_controversiality\tdepth_log_controversiality\tchains_controversiality\tchains_only_controversiality\n')
 	for a in actor_comments:
 		for month in actor_comments[a]:
 			f_out.write('\t'.join(map(str, [art, a, month] + actor_comments[a][month])) + '\n')
