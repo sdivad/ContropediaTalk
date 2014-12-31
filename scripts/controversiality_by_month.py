@@ -22,7 +22,10 @@ datadir = "../../contropedia-sprint-scripts/discussions_match/data/%s" % page_ti
 debug = False
 
 #weight to make stronger the association between a thread and an actor when the actor is mentioned in the thread title
-TITLE_WEIGHT = 3
+TITLE_WEIGHT = 2
+
+#weight to make stronger the association between a given comment and an actor when the actor is mentioned in the comment
+COMMENT_WEIGHT = 1
 
 #weight to give more importance to reply chains (when a user replies back: A -> B -> A) when computing controversiality of comments
 CHAIN_WEIGHT = 3
@@ -54,7 +57,7 @@ def load_actors_data(f):
 		if thread not in d: d[thread] = {}
 		if actor in d[thread] and debug: print 'duplicated actor-thread: %s --- %s' %(actor, thread)
 		n_title = int(n_title)
-		d[thread][actor] = [n_title, timestamps] 
+		d[thread][actor] = [n_title, timestamps, ids] 
 	return d		
 
 		
@@ -74,6 +77,7 @@ for line in f:
 		l += 1
 		s = line.strip('\n').split('\t')
 		thread = s[-1]
+		cid = s[3]
 		level = int(s[4])
 		art = s[5]
 		ts = int(s[8])
@@ -108,6 +112,8 @@ for line in f:
 					#weight each thread in which an actor has appeared (before the current comment) according to the proportion of previous comments in which it has appeared	
 					#NOTE: there is no normalization based on the number of actors appearing in a thread; it could be added
 					actor_thread_weight /= float(n_thread_comments)
+					#add a special weight if the actor is mentioned in the text of the comment
+					if cid in actor_threads[thread][actor][2].strip("'").replace("'","").replace("[","").replace("]","").split(", "): actor_thread_weight += COMMENT_WEIGHT
 					#add a special weight if the actor is mentioned in the thread title
 					if actor_threads[thread][actor][0]> 0: actor_thread_weight += TITLE_WEIGHT
 								
